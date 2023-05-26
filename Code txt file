@@ -4,6 +4,7 @@ Servo servoLeft;
 Servo servoRight;
 Servo ultrasound;
 int counter = 0;
+int scanRes = 0;
 
 void setup() {
 
@@ -25,16 +26,30 @@ void sensorsetup(){
 
 void loop() {
   long USDistance;
-  int scanRes = 0;
   counter++;
 
- if (counter > 20){
+ if (counter > 10){
     scanRes = periodicScan();
-    delay(1000);
     counter = 0;
+    ultrasound.write(90);
+    if (scanRes = 0) {
+      backward();
+      delay(200);
+      spinL();
+      delay(300);
+    }
+    if (scanRes = 180){
+      backward();
+      delay(200);
+      spinR();
+      delay(300);
+    }
+    
+
+    // move according to res of scan res
   }
   
-  ultrasound.write(50);
+  ultrasound.write(50); 
   for(int i = 50;i<130;i++){
     ultrasound.write(i);
     USDistance = ping();
@@ -44,11 +59,12 @@ void loop() {
   }
   else {
     backward();
-    delay(150);
+    delay(200);
     spinR();
     delay(250);
     ultrasound.write(90);
   }
+
     
   } 
 
@@ -106,31 +122,29 @@ void spinL() {
 }  
 
 void stop() {
-  //movement
   servoLeft.detach();
   servoRight.detach();
 }  
 
- int periodicScan() {
-Serial.print("printing now");
-int n;
+
+int periodicScan() {
 long USDistance;
+int n = -1;
 stop();
-n = 0;
-ultrasound.write(n);
-delay(300);
+for (int i = 0; i<200; i = i + 180){
+ultrasound.write(i);
+delay(1000);
 USDistance = ping();
-if (USDistance > 20 || USDistance == 0){
+
+if (USDistance < 20 && USDistance != 0){
+    n = i;
     return(n);
   }
-n = 180;
-ultrasound.write(n);
-delay(600);
-USDistance = ping();
-if (USDistance > 20 || USDistance == 0){
-    return(n);
-   
-  }
-return(-1);
+
+}
+
+
+
+return(n);
 
 }
