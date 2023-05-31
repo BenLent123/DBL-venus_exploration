@@ -3,6 +3,7 @@ const int pingPin = 9;
 Servo servoLeft;                             
 Servo servoRight;
 Servo ultrasound;
+Servo gripper;
 int counter = 0;
 int scanRes = 0;
 int leftSensor = 3; // TO BE CHANGED
@@ -13,6 +14,7 @@ void setup() {
 Serial.begin(9600);
 servoLeft.attach(13);                   
 servoRight.attach(12);
+gripper.attach(10);
 ultrasound.attach(11); 
 sensorsetup();
 
@@ -144,6 +146,19 @@ if (USDistance < 20 && USDistance != 0){
 }
 return(n);
 }
+
+
+void open_gripper() {
+gripper.write(90);// set the servo position to 90 degrees 
+delay(1000);// wait for 1 sec
+}
+
+void close_gripper(){
+gripper.write(180);
+delay(1000);
+}
+
+
 
 void infra_ping() 
 {
