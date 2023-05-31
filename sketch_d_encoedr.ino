@@ -9,7 +9,7 @@ int currstateLEC;
 int laststateLEC;
 int currstateREC;
 int laststateREC;
-String currentDir ="";
+
 
 void setup() {
   Serial.begin (9600);
@@ -62,17 +62,17 @@ void stop() {
 void encode(){
   // Read the current state of CLK
 	currstateLEC = digitalRead(LEC);
+  	currstateREC = digitalRead(REC);
 
 	// If last and current state of CLK are different, then pulse occurred
 	// React to only 1 state change to avoid double count
-	if (currstateLEC != laststateLEC  && currstateLEC == 1){
+	if (currstateLEC != laststateLEC  && currstateREC != laststateREC && currstateLEC == 1 && currstateREC == 1){
 			counter ++;
-			currentDir ="CW";
+			
 		}
 
-		Serial.print("Direction: ");
-		Serial.print(currentDir);
-		Serial.print(" | Counter: ");
+		
+		Serial.print("Counter: ");
 		Serial.println(counter);
 	}
 
