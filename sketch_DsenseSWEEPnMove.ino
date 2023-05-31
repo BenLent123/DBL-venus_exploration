@@ -1,124 +1,140 @@
 #include <Servo.h>  
-const int pingPin = 9;
 Servo servoLeft;                             
 Servo servoRight;
-Servo ultrasound;
-Servo gripper;
-int counter = 0;
+Servo servoUltrasound;
+
+#define RXbee 0
+#define TX 1
+//2 through 6 not in use, digital, some pwm
+#define leftEncoderPin 7
+#define rightEncoderPin 8
+#define ultrasoundPin 9
+#define grabberServoPin 10
+#define ultrasoundServo 11
+#define leftServo 12
+#define rightServo 13
+//0 through 5 not in use, analog
+
+int counterLoop = 0;
 int scanRes = 0;
-int leftSensor = 3; // TO BE CHANGED
-int rightSensor = 3; // TO BE CHANGED
+bool switchTurnDirection = false;
 
 void setup() {
-
-Serial.begin(9600);
-servoLeft.attach(13);                   
-servoRight.attach(12);
-gripper.attach(10);
-ultrasound.attach(11); 
-sensorsetup();
-
+  Serial.begin(9600);
+  servoRight.attach(rightServo);                   
+  servoLeft.attach(leftServo);
+  servoUltrasound.attach(ultrasoundServo); 
+  sensorsetup();
 }
 
-
 void sensorsetup(){
-  ultrasound.write(90);
+  servoUltrasound.write(90);
   delay(100);
   return(1);
 }
 
-
 void loop() {
-  long USDistance;
-  counter++;
-
-    if (counter > 10){
+  int USDistance;
+  counterLoop++;
+// I and how long the loop takes effect the amount
+  if (counterLoop > 5){
     scanRes = periodicScan();
-    counter = 0;
-    ultrasound.write(90);
-    if (scanRes = 0) {
+    counterLoop = 0;
+    servoUltrasound.write(90);
+    if (scanRes == 0) {
+      // means something detected at 0 (right?)
       backward();
-      delay(200);
-      spinL();
-      delay(300);
-    }
-    if (scanRes = 180){
-      backward();
-      delay(200);
+      delay(50);
       spinR();
-      delay(300);
+      delay(200);
     }
-   
+    if (scanRes == 180){
+      backward();
+      delay(50);
+      spinL();
+      delay(200);
+    }
+    
+    // move according to res of scan res
+
+    // if(switchTurnDirection == false){
+    //   switchTurnDirection = true;
+    // }else{
+    //   switchTurnDirection = false;
+    // }
   }
   
-  ultrasound.write(50); 
+  servoUltrasound.write(50); 
   for(int i = 50;i<130;i++){
-    ultrasound.write(i);
+    servoUltrasound.write(i);
     USDistance = ping();
     if (USDistance > 20 || USDistance == 0){
-    forward();
-   
-  }
-  else {
-    backward();
-    delay(200);
-    spinR();
-    delay(250);
-    ultrasound.write(90);
-  }
-
+      forward();
     
-  } 
+    }
+    else {
+      backward();
+      delay(50);
+
+      if(switchTurnDirection==true){
+        spinR();
+      }else{
+        spinL();
+      }
+      delay(150);
+      servoUltrasound.write(90);
+    }
+  }
 
 }
 
 
 
-long ping(){
-  long duration, USDistance;
-  pinMode(pingPin, OUTPUT);
-  digitalWrite(pingPin, LOW);
+int ping(){
+  int duration, USDistance;
+  pinMode(ultrasoundPin, OUTPUT);
+  digitalWrite(ultrasoundPin, LOW);
   delayMicroseconds(2);
-  digitalWrite(pingPin, HIGH);
+  digitalWrite(ultrasoundPin, HIGH);
   delayMicroseconds(5);
-  digitalWrite(pingPin, LOW);
-  pinMode(pingPin, INPUT);
-  duration = pulseIn(pingPin, HIGH);
+  digitalWrite(ultrasoundPin, LOW);
+  pinMode(ultrasoundPin, INPUT);
+  duration = pulseIn(ultrasoundPin, HIGH);
   USDistance = duration / 29 / 2;
   printDistance(USDistance);
   return(USDistance);
 }
 
-void printDistance(long USDistance){
+void printDistance(int USDistance){
   Serial.print(USDistance);
   Serial.print("cm");
   Serial.println();
 }
 
 void forward() {
-  servoLeft.attach(13);                   
-  servoRight.attach(12);
-  servoLeft.writeMicroseconds(1300);         
-  servoRight.writeMicroseconds(1700);
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.writeMicroseconds(1300);         
+  servoLeft.writeMicroseconds(1700);
 }    
 
 void backward() {
-  servoLeft.attach(13);                   
-  servoRight.attach(12);
-  servoLeft.writeMicroseconds(1700);         
-  servoRight.writeMicroseconds(1300);
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.writeMicroseconds(1700);         
+  servoLeft.writeMicroseconds(1300);
 }   
 
-void spinR() {
-  servoLeft.attach(13);                   
-  servoRight.attach(12);
+void spinL() {
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
   servoLeft.writeMicroseconds(1700);         
   servoRight.writeMicroseconds(1700);
 } 
 
-void spinL() {
-  servoLeft.attach(13);                   
-  servoRight.attach(12);
+void spinR() {
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
   servoLeft.writeMicroseconds(1300);         
   servoRight.writeMicroseconds(1300);
 }  
@@ -130,21 +146,55 @@ void stop() {
 
 
 int periodicScan() {
-long USDistance;
-int n = -1;
-stop();
-for (int i = 0; i<200; i = i + 180){
-ultrasound.write(i);
-delay(1000);
-USDistance = ping();
+  int USDistance;
+  bool left = false;
+  bool right = false;
+  stop();
 
-if (USDistance < 20 && USDistance != 0){
-    n = i;
-    return(n);
+  servoUltrasound.write(0);
+  delay(750);
+  USDistance = ping();
+  if(USDistance < 20 && USDistance != 0){
+    left = true;
+  }
+  if(USDistance < 40 && USDistance != 0){
+      switchTurnDirection = true;
   }
 
-}
-return(n);
+  
+  servoUltrasound.write(180);
+  delay(1000);
+  USDistance = ping();
+  if(USDistance < 20 && USDistance != 0){
+    right = true;
+  }
+  if(USDistance < 40 && USDistance != 0){
+      switchTurnDirection = false;
+  }
+
+  if(right==true && left == true){
+    // obstacles on both sides
+    return(90);
+  }else if(right==true && left == false){
+    // obstactle at direction 180 (left?)
+    return(180);
+  }else if(right==false && left == true){
+    // obstacle at direction 0 (right?)
+    return(0);
+  }
+  return(-1);
+
+  // stop();
+  // for (int i = 0; i<200; i = i + 180){
+  // ultrasound.write(i);
+  // delay(1000);
+  // USDistance = ping();
+  // if (USDistance < 20 && USDistance != 0){
+  //     n = i;
+  //     return(n);
+  //   }
+  // }
+  // return(n);
 }
 
 
