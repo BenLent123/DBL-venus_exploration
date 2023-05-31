@@ -5,6 +5,8 @@ Servo servoRight;
 Servo ultrasound;
 int counter = 0;
 int scanRes = 0;
+int leftSensor = 3; // TO BE CHANGED
+int rightSensor = 3; // TO BE CHANGED
 
 void setup() {
 
@@ -28,7 +30,7 @@ void loop() {
   long USDistance;
   counter++;
 
- if (counter > 10){
+    if (counter > 10){
     scanRes = periodicScan();
     counter = 0;
     ultrasound.write(90);
@@ -44,9 +46,7 @@ void loop() {
       spinR();
       delay(300);
     }
-    
-
-    // move according to res of scan res
+   
   }
   
   ultrasound.write(50); 
@@ -142,9 +142,48 @@ if (USDistance < 20 && USDistance != 0){
   }
 
 }
-
-
-
 return(n);
+}
+
+void infra_ping() 
+{
+  // check the outputs of the pins 
+  int infra_ls = digitalRead(leftSensor);
+  int infra_rs = digitalRead(rightSensor);
 
 }
+
+/*void infra_action(){
+   //00 = both on white -> move forward
+  if (infra_ls == 0 && infra_rs == 0)
+  {
+    forward();
+    //GRIPPER KIT?
+  }
+
+  else if (infra_ls == 1 && infra_rs == 1)
+  {
+    backward();
+  }
+  
+
+  //01 = right sensor on black -> turn left
+  else if (infra_ls == 0 && infra_rs == 1)
+  {
+    backward();
+    delay(150);
+    spinL();
+  }
+
+  //10 = left sensor on black -> turn right
+  else if (infra_ls == 1 && infra_rs == 0)
+  {
+    backward();
+    delay(150);
+    spinR();
+  }
+}
+*/
+
+
+
