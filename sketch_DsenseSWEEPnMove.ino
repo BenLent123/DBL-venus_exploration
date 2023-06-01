@@ -2,6 +2,7 @@
 Servo servoLeft;                             
 Servo servoRight;
 Servo servoUltrasound;
+Servo gripper;
 
 #define RXbee 0
 #define TX 1
@@ -13,6 +14,8 @@ Servo servoUltrasound;
 #define ultrasoundServo 11
 #define leftServo 12
 #define rightServo 13
+#define leftSensor 3 // TO BE CHANGED IR SENSOR
+#define rightSensor 3 // TO BE CHANGED IR SENSOR
 //0 through 5 not in use, analog
 
 int counterLoop = 0;
