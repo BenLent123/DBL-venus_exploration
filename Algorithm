@@ -1,5 +1,6 @@
-#include <Servo.h>  
-Servo servoLeft;                             
+#include <Servo.h>
+#include <Chrono.h>
+Servo servoLeft;
 Servo servoRight;
 Servo servoUltrasound;
 Servo gripper;
@@ -7,40 +8,50 @@ Servo gripper;
 #define RXbee 0
 #define TX 1
 //2 through 6 not in use, digital, some pwm
-#define leftEncoderPin 7
-#define rightEncoderPin 8
 #define ultrasoundPin 9
 #define grabberServoPin 10
 #define ultrasoundServo 11
 #define leftServo 12
 #define rightServo 13
-#define leftSensor 3 // TO BE CHANGED IR SENSOR
-#define rightSensor 3 // TO BE CHANGED IR SENSOR
+#define leftSensor 3   // TO BE CHANGED IR SENSOR
+#define rightSensor 3 
+#define LENCODER 8
+#define RENCODER 7
+int nholesR =0;
+int nholesL = 0;
+bool prevreadL;
+bool prevreadR; // TO BE CHANGED IR SENSOR
 //0 through 5 not in use, analog
-
 int counterLoop = 0;
 int scanRes = 0;
 bool switchTurnDirection = false;
 
+
+
+
+
 void setup() {
   Serial.begin(9600);
-  servoRight.attach(rightServo);                   
+  pinMode(LENCODER, INPUT);                   
+  pinMode(RENCODER, INPUT);
+  servoRight.attach(rightServo);
   servoLeft.attach(leftServo);
-  servoUltrasound.attach(ultrasoundServo); 
+  servoUltrasound.attach(ultrasoundServo);
   sensorsetup();
 }
 
-void sensorsetup(){
+void sensorsetup() {
   servoUltrasound.write(90);
+  gripper.write(180);
   delay(100);
-  return(1);
+  return (1);
 }
 
 void loop() {
   int USDistance;
   counterLoop++;
-// I and how long the loop takes effect the amount
-  if (counterLoop > 5){
+  // I and how long the loop takes effect the amount
+  if (counterLoop > 5) {
     scanRes = periodicScan();
     counterLoop = 0;
     servoUltrasound.write(90);
@@ -51,13 +62,13 @@ void loop() {
       spinR();
       delay(200);
     }
-    if (scanRes == 180){
+    if (scanRes == 180) {
       backward();
       delay(50);
       spinL();
       delay(200);
     }
-    
+
     // move according to res of scan res
 
     // if(switchTurnDirection == false){
@@ -66,34 +77,36 @@ void loop() {
     //   switchTurnDirection = false;
     // }
   }
-  
-  servoUltrasound.write(50); 
-  for(int i = 50;i<130;i++){
+
+  servoUltrasound.write(50);
+  for (int i = 50; i < 130; i++) {
     servoUltrasound.write(i);
     USDistance = ping();
-    if (USDistance > 20 || USDistance == 0){
+  
+    if (USDistance > 20 || USDistance == 0) {
+      
       forward();
-    
-    }
-    else {
+
+    } else {
+      
       backward();
       delay(50);
 
-      if(switchTurnDirection==true){
+      if (switchTurnDirection == true) {
         spinR();
-      }else{
+      } else {
         spinL();
       }
       delay(150);
       servoUltrasound.write(90);
     }
   }
-
 }
 
 
 
-int ping(){
+int ping() {
+  Dret();
   int duration, USDistance;
   pinMode(ultrasoundPin, OUTPUT);
   digitalWrite(ultrasoundPin, LOW);
@@ -105,47 +118,54 @@ int ping(){
   duration = pulseIn(ultrasoundPin, HIGH);
   USDistance = duration / 29 / 2;
   printDistance(USDistance);
-  return(USDistance);
+  return (USDistance);
+  
 }
 
-void printDistance(int USDistance){
+void printDistance(int USDistance) {
   Serial.print(USDistance);
   Serial.print("cm");
   Serial.println();
+   
 }
 
 void forward() {
-  servoLeft.attach(leftServo);                   
+  servoLeft.attach(leftServo);
   servoRight.attach(rightServo);
-  servoRight.writeMicroseconds(1300);         
+  servoRight.writeMicroseconds(1300);
   servoLeft.writeMicroseconds(1700);
-}    
+}
 
 void backward() {
-  servoLeft.attach(leftServo);                   
+
+  servoLeft.attach(leftServo);
   servoRight.attach(rightServo);
-  servoRight.writeMicroseconds(1700);         
+  servoRight.writeMicroseconds(1700);
   servoLeft.writeMicroseconds(1300);
-}   
+}
 
 void spinL() {
-  servoLeft.attach(leftServo);                   
+
+  servoLeft.attach(leftServo);
   servoRight.attach(rightServo);
-  servoLeft.writeMicroseconds(1700);         
+  servoLeft.writeMicroseconds(1700);
   servoRight.writeMicroseconds(1700);
-} 
+}
 
 void spinR() {
-  servoLeft.attach(leftServo);                   
+
+  servoLeft.attach(leftServo);
   servoRight.attach(rightServo);
-  servoLeft.writeMicroseconds(1300);         
+  servoLeft.writeMicroseconds(1300);
   servoRight.writeMicroseconds(1300);
-}  
+  
+}
 
 void stop() {
+
   servoLeft.detach();
   servoRight.detach();
-}  
+}
 
 
 int periodicScan() {
@@ -157,48 +177,78 @@ int periodicScan() {
   servoUltrasound.write(0);
   delay(750);
   USDistance = ping();
-  if(USDistance < 20 && USDistance != 0){
+  if (USDistance < 20 && USDistance != 0) {
     left = true;
   }
-  if(USDistance < 40 && USDistance != 0){
-      switchTurnDirection = true;
+  if (USDistance < 40 && USDistance != 0) {
+    switchTurnDirection = true;
   }
 
-  
+
   servoUltrasound.write(180);
   delay(1000);
   USDistance = ping();
-  if(USDistance < 20 && USDistance != 0){
+  if (USDistance < 20 && USDistance != 0) {
     right = true;
   }
-  if(USDistance < 40 && USDistance != 0){
-      switchTurnDirection = false;
+  if (USDistance < 40 && USDistance != 0) {
+    switchTurnDirection = false;
   }
 
-  if(right==true && left == true){
+  if (right == true && left == true) {
     // obstacles on both sides
-    return(90);
-  }else if(right==true && left == false){
+    return (90);
+  } else if (right == true && left == false) {
     // obstactle at direction 180 (left?)
-    return(180);
-  }else if(right==false && left == true){
+    return (180);
+  } else if (right == false && left == true) {
     // obstacle at direction 0 (right?)
-    return(0);
+    return (0);
   }
-  return(-1);
+  return (-1);
 
-  // stop();
-  // for (int i = 0; i<200; i = i + 180){
-  // ultrasound.write(i);
-  // delay(1000);
-  // USDistance = ping();
-  // if (USDistance < 20 && USDistance != 0){
-  //     n = i;
-  //     return(n);
-  //   }
-  // }
-  // return(n);
 }
+
+float leftencoder() {
+  
+  boolean readwheel = digitalRead(LENCODER);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadL) {             //make sure that it is not the same hole being read
+    nholesL += 1;
+    prevreadL = 1;
+  } else if (readwheel == 0) {
+    prevreadL = 0;
+  }
+  
+
+  float distance = (((nholesL)*3.14*6.5)/8);
+  return(distance);  
+
+}
+
+float rightencoder() {
+  boolean readwheel = digitalRead(RENCODER);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadR) {             //make sure that it is not the same hole being read
+    nholesR += 1;
+    prevreadR = 1;
+  } else if (readwheel == 0) {
+    prevreadR = 0;
+  }
+  
+  
+  float distance = (((nholesR)*3.14*6.5)/8);
+  return(distance);
+}
+
+float Dret(){
+float a = leftencoder();
+float b = rightencoder();
+
+Serial.print("Distance R:");
+Serial.println(b);
+Serial.print("Distance L:");
+Serial.println(a);
+}
+
 
 
 void open_gripper() {
