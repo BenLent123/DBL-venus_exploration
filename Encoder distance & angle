@@ -24,7 +24,7 @@ int leftencoder() {
   }
   if (nholesL = 8){
    nholesL = 0;
-   rotationsL++:
+   rotationsL++;
   }
   
   int distance = (((rotationsL)*3.14*6.5)/24);
@@ -42,7 +42,7 @@ int rightencoder() {
   }
   if (nholesR = 8){
    nholesR = 0;
-   rotationsR++:
+   rotationsR++;
   }
   
   int distance = (((rotationsR)*3.14*6.5)/24);
