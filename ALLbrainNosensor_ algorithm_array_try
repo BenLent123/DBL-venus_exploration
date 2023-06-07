@@ -25,7 +25,10 @@ bool prevreadR; // TO BE CHANGED IR SENSOR
 int counterLoop = 0;
 int scanRes = 0;
 bool switchTurnDirection = false;
+int map[8][8];
+// negative --> obstacle / 1 --> block / 2 --> home 
 //////////////////////////////////
+//1.10m *1.10 m --> 13*13 cm 
 void setup() {
   Serial.begin(9600);
   pinMode(LENCODER, INPUT);                   
@@ -35,23 +38,64 @@ void setup() {
   servoUltrasound.attach(ultrasoundServo);
 }
 
-typedef struct
+int map_setup(map)
 {
-    char *grid;
-    int maxX = 6;
-    int maxY = 6;
-} navigation_t;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+          if (i == 0 && j == 0){
+            map[i][j] = 2;
+          }
 
-typedef struct
-{
-    int x = 0;
-    int y = 0;
-} position_t;
+            map[i][j] = 0;
+        }
+    }
+}
 
-void loop(){
+void currentLOC(map){
+int i = 0;
+loc = map[0][0];
+float a = leftencoder();
+float b = rightencoder();
+if (a > 13 && b >13){
+i++
+loc = map[i][0]
+}
 
 }
 
+//////////////////////////////////////////////////
+/////////////////////////////////////////////////
+float leftencoder() {
+  
+  boolean readwheel = digitalRead(LENCODER);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadL) {             //make sure that it is not the same hole being read
+    nholesL += 1;
+    prevreadL = 1;
+  } else if (readwheel == 0) {
+    prevreadL = 0;
+  }
+  
+
+  float distance = (((nholesL)*3.14*6.5)/8);
+  return(distance);  
+
+}
+
+float rightencoder() {
+  boolean readwheel = digitalRead(RENCODER);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadR) {             //make sure that it is not the same hole being read
+    nholesR += 1;
+    prevreadR = 1;
+  } else if (readwheel == 0) {
+    prevreadR = 0;
+  }
+  
+  
+  float distance = (((nholesR)*3.14*6.5)/8);
+  return(distance);
+}
 
 void forward() {
   servoLeft.attach(leftServo);
@@ -90,4 +134,14 @@ void stop() {
   servoLeft.detach();
   servoRight.detach();
 }
+/////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
+
+
+
+void main(){
+  nav_setup();
+
+
+}
