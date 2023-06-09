@@ -1,0 +1,36 @@
+void forward() {
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.write(0);         
+  servoLeft.write(180);
+}    
+
+void backward() {
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.write(180);         
+  servoLeft.write(0);
+}   
+
+void spinL() {
+  stop();
+  servoRight.attach(rightServo);
+  servoLeft.detach();
+  servoRight.write(0);
+  
+} 
+
+void spinR() {
+  stop();
+  servoLeft.attach(leftServo);
+  servoRight.detach();                   
+  servoLeft.write(180);         
+  
+}  
+
+void stop() {
+  servoLeft.detach();
+  servoRight.detach();
+}  
