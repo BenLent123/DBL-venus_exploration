@@ -104,36 +104,7 @@ float rightencoder() {
   return(distance);
 }
 
-float leftencoderReset() {
-  float distance = 0;
-  boolean readwheel = digitalRead(LENCODER);                  //read encoders
-  if (readwheel == 1 && readwheel != prevreadL) {             //make sure that it is not the same hole being read
-    nholesL += 1;
-    prevreadL = 1;
-  } else if (readwheel == 0) {
-    prevreadL = 0;
-  }
-  
 
-  distance = (((nholesL)*3.14*6.5)/8);
-  return(distance);  
-
-}
-
-float rightencoderReset() {
-  float distance = 0;
-  boolean readwheel = digitalRead(RENCODER);                  //read encoders
-  if (readwheel == 1 && readwheel != prevreadR) {             //make sure that it is not the same hole being read
-    nholesR += 1;
-    prevreadR = 1;
-  } else if (readwheel == 0) {
-    prevreadR = 0;
-  }
-  
-  
-   distance = (((nholesR)*3.14*6.5)/8);
-  return(distance);
-}
 /////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
@@ -143,18 +114,22 @@ float tempL = 0;
 char turn = 'n';
 tempR = 0;
 tempL = 0;
-  tempR = rightencoder();
-    tempL = leftencoder();
+tempR = rightencoder();
+tempL = leftencoder();
   if (tempR > tempL){
    
     turn = 'L';
   }
   else if (tempL > tempR){
+  
     turn = 'R';
   }
   else if (tempL == tempR){
+    
     turn = 's';
   }
+  tempR = 0;
+  tempL = 0;
   return(turn);
 }
 
@@ -167,10 +142,10 @@ for (int i = 0; i<200;i++){
 float DisR = rightencoder();
 float DisL = leftencoder();
 char turn = angle();
-// Serial.print("L:");
-// Serial.println(DisL);
-// Serial.print("R:");
-// Serial.println(DisR);
+Serial.print("L:");
+Serial.println(DisL);
+Serial.print("R:");
+Serial.println(DisR);
 Serial.print("D: ");
 Serial.println(turn);
 delay(20);
@@ -181,14 +156,15 @@ for (int i = 0; i<200;i++){
 float DisR = rightencoder();
 float DisL = leftencoder();
 char turn = angle();
-// Serial.print("L:");
-// Serial.println(DisL);
-// Serial.print("R:");
-// Serial.println(DisR);
+Serial.print("L:");
+Serial.println(DisL);
+Serial.print("R:");
+Serial.println(DisR);
 Serial.print("D: ");
 Serial.println(turn);
 delay(20);
 }
 
 }
+
 
