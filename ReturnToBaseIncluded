@@ -197,6 +197,149 @@ void loop()
 void depositRock()
 {
   
+  turnLeft = true;
+  int USPING = ping();
+
+  while (USPING < 20 && USPING != 0){
+    avoidObstacle();
+    USPING = ping();
+  }
+
+  forward();
+  IR_sensor1 = infra_ping(Sensor1);
+  bool check = true;
+
+  while(true){
+    IR_sensor1 = infra_ping(Sensor1);
+    USPING = ping();
+
+    if (IR_sensor1 == 1){
+      servoUltrasound.write(180);
+      delay(200);
+      USPING = ping();
+
+      if(USPING < 20 && USPING != 0){
+        // IN THE LAB
+        open_gripper();
+        leaveLab();  
+        return(0);      
+      }else{
+        
+        navigateLabOpening();        
+
+      }
+      
+
+    }    
+
+
+    // if(USPING < 20 && USPING != 0){
+    //   avoidObstacle();
+    // }else if(IR_sensor1 == 1){
+    //   servoUltrasound.write(180);
+    //   delay(200);
+    //   USPING = ping();
+    //   if (USPING <20 && != 0){
+    //     // IN THE LAB
+
+    //     open_gripper();
+
+    //     backwards();
+    //     USPING = ping();
+
+    //     while(USPING < 20 && USPING != 0){
+    //       USPING = ping();
+    //     }
+
+    //     delay(200);
+
+    //     left();
+    //     return(0);
+
+    //   }else{
+
+    //   }
+    // }
+  }
+
+
+
+  // sensor1 = tape
+  // sensor2 = rock/wall
+
+  // returning 1 equals black detected
+  // returning -1 equals white detected
+  // returning 0 equals nothing detected
+}
+
+void leaveLab()
+{
+  servoUltrasound.write(180);
+  delay(400);
+
+  backward();
+  int usping = ping();
+  
+  while(usping<20 && usping != 0){
+    usping = ping();
+  }
+  delay(200);
+
+  left();
+
+}
+
+void navigateLabOpening()
+{
+  servoUltrasound.write(0);
+  delay(400);
+
+
+  int lastPing = ping();
+  int currPing = ping();
+  backward();
+
+  while(currPing < lastPing + 15){
+    lastPing = currPing;
+    currPing = ping();
+    
+    if(currPing > 20 ){
+
+      // move a bit towards wall
+      forward();
+      delay(75);
+      spinR();
+      delay(100);
+
+      backward();
+
+    }
+
+
+  }
+
+  delay(50);
+  spinR();
+
+  servoUltrasound.write(90);
+  delay(200);
+
+  // finetune delay for appropriate
+
+  currPing = ping();
+  forward();
+  while(currPing <20 && currPing != 0){
+    
+  }
+
+
+  while (currPing < 20 && currPing != 0){
+    avoidObstacle();
+    currPing = ping();
+  }
+
+  forward();
+  
 }
 
 int ping()
@@ -215,7 +358,7 @@ int ping()
   return(USDistance);
 }
 
-void avoidObstacle
+void avoidObstacle()
 {
   backward();
   servoUltrasound.write(90);
@@ -273,6 +416,7 @@ void left()
 
 void forward()
 {
+  stop();
   servoLeft.attach(leftServo);                   
   servoRight.attach(rightServo);
   servoRight.writeMicroseconds(1300);         
@@ -281,6 +425,7 @@ void forward()
 
 void backward()
 {
+  stop();
   servoLeft.attach(leftServo);                   
   servoRight.attach(rightServo);
   servoRight.writeMicroseconds(1700);         
@@ -289,6 +434,7 @@ void backward()
 
 void spinL()
 {
+  stop();
   servoLeft.attach(leftServo);                   
   servoRight.attach(rightServo);
   servoLeft.writeMicroseconds(1700);         
@@ -297,6 +443,7 @@ void spinL()
 
 void spinR()
 {
+  stop();
   servoLeft.attach(leftServo);                   
   servoRight.attach(rightServo);
   servoLeft.writeMicroseconds(1300);         
