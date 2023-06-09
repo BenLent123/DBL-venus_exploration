@@ -5,8 +5,8 @@ Servo servoUltrasound;
 #define ultrasoundServo 11
 #define leftServo 12
 #define rightServo 13
-#define LENCODER 8
-#define RENCODER 7
+#define LENCODER 7
+#define RENCODER 8
 #define ultrasoundPin 9
 int nholesR =0;
 int nholesL = 0;
@@ -20,67 +20,51 @@ void setup() {
   pinMode(RENCODER, INPUT);
   servoRight.attach(rightServo);                   
   servoLeft.attach(leftServo);
+  encodersetup();
 }
 
-
-
-void loop(){
-int d;
-forward();
-Dret();
-d = ping();
-Serial.print("SensorDis:");
-Serial.println(d);
+void encodersetup(){
+bool a = digitalRead(LENCODER);
+//bool b = digitalRead(RENCODER);
+spinR();
+while (digitalRead(RENCODER) != a){
 }
-
-int ping(){
-  int duration, USDistance;
-  pinMode(ultrasoundPin, OUTPUT);
-  digitalWrite(ultrasoundPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(ultrasoundPin, HIGH);
-  delayMicroseconds(5);
-  digitalWrite(ultrasoundPin, LOW);
-  pinMode(ultrasoundPin, INPUT);
-  duration = pulseIn(ultrasoundPin, HIGH);
-  USDistance = duration / 29 / 2;
-  printDistance(USDistance);
-  return(USDistance);
+a = digitalRead(RENCODER);
+//bool b = digitalRead(RENCODER);
+spinL();
+while (digitalRead(LENCODER) != a){
 }
-
-void printDistance(int USDistance){
-  Serial.print(USDistance);
-  Serial.print("cm");
-  Serial.println();
 }
-
-
 void forward() {
+  stop();
   servoLeft.attach(leftServo);                   
   servoRight.attach(rightServo);
-  servoRight.writeMicroseconds(1300);         
-  servoLeft.writeMicroseconds(1700);
+  servoRight.write(0);         
+  servoLeft.write(180);
 }    
 
 void backward() {
+  stop();
   servoLeft.attach(leftServo);                   
   servoRight.attach(rightServo);
-  servoRight.writeMicroseconds(1700);         
-  servoLeft.writeMicroseconds(1300);
+  servoRight.write(180);         
+  servoLeft.write(0);
 }   
 
 void spinL() {
-  servoLeft.attach(leftServo);                   
+  stop();
   servoRight.attach(rightServo);
-  servoLeft.writeMicroseconds(1700);         
-  servoRight.writeMicroseconds(1700);
+  servoLeft.detach();
+  servoRight.write(0);
+  
 } 
 
 void spinR() {
-  servoLeft.attach(leftServo);                   
-  servoRight.attach(rightServo);
-  servoLeft.writeMicroseconds(1300);         
-  servoRight.writeMicroseconds(1300);
+  stop();
+  servoLeft.attach(leftServo);
+  servoRight.detach();                   
+  servoLeft.write(180);         
+  
 }  
 
 void stop() {
@@ -88,7 +72,8 @@ void stop() {
   servoRight.detach();
 }  
 
-
+//////////////////////////////////////////////////
+/////////////////////////////////////////////////
 float leftencoder() {
   
   boolean readwheel = digitalRead(LENCODER);                  //read encoders
@@ -115,16 +100,93 @@ float rightencoder() {
   }
   
   
-  float distance = (((nholesR)*3.14*6.5)/8);
+   float distance = (((nholesR)*3.14*6.5)/8);
   return(distance);
 }
 
-float Dret(){
-float a = leftencoder();
-float b = rightencoder();
+float leftencoderReset() {
+  float distance = 0;
+  boolean readwheel = digitalRead(LENCODER);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadL) {             //make sure that it is not the same hole being read
+    nholesL += 1;
+    prevreadL = 1;
+  } else if (readwheel == 0) {
+    prevreadL = 0;
+  }
+  
 
-Serial.print("Distance R:");
-Serial.println(b);
-Serial.print("Distance L:");
-Serial.println(a);
+  distance = (((nholesL)*3.14*6.5)/8);
+  return(distance);  
+
 }
+
+float rightencoderReset() {
+  float distance = 0;
+  boolean readwheel = digitalRead(RENCODER);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadR) {             //make sure that it is not the same hole being read
+    nholesR += 1;
+    prevreadR = 1;
+  } else if (readwheel == 0) {
+    prevreadR = 0;
+  }
+  
+  
+   distance = (((nholesR)*3.14*6.5)/8);
+  return(distance);
+}
+/////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+char angle(float DisR, float DisL){
+  float angle;
+  char turn = 'n';
+  if (DisR > DisL){
+    angle = (DisR - DisL);
+    turn = 'L';
+  }
+  else if (DisL > DisR){
+    angle = (DisL - DisR);
+    turn = 'R';
+  }
+  else if (DisL == DisR){
+    angle = 0;
+   turn = 's';
+  }
+  return(turn);
+}
+
+
+
+void loop(){
+
+spinL();
+for (int i = 0; i<200;i++){
+float DisR = rightencoder();
+float DisL = leftencoder();
+char turn = angle(DisR,DisL);
+Serial.print("L:");
+Serial.println(DisL);
+Serial.print("R:");
+Serial.println(DisR);
+Serial.print("D: ");
+Serial.println(turn);
+delay(20);
+}
+
+spinR();
+for (int i = 0; i<200;i++){
+float DisR = rightencoder();
+float DisL = leftencoder();
+char turn = angle(DisR,DisL);
+Serial.print("L:");
+Serial.println(DisL);
+Serial.print("R:");
+Serial.println(DisR);
+Serial.print("D: ");
+Serial.println(turn);
+delay(20);
+}
+
+}
+
+
