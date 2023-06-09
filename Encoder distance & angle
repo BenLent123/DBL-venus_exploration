@@ -143,20 +143,16 @@ float tempL = 0;
 char turn = 'n';
 tempR = 0;
 tempL = 0;
- 
-  if (tempR > tempL){
-    tempR = rightencoder();
+  tempR = rightencoder();
     tempL = leftencoder();
+  if (tempR > tempL){
+   
     turn = 'L';
   }
   else if (tempL > tempR){
-    tempR = rightencoder();
-    tempL = leftencoder();
     turn = 'R';
   }
   else if (tempL == tempR){
-    tempR = rightencoder();
-    tempL = leftencoder();
     turn = 's';
   }
   return(turn);
@@ -171,10 +167,10 @@ for (int i = 0; i<200;i++){
 float DisR = rightencoder();
 float DisL = leftencoder();
 char turn = angle();
-Serial.print("L:");
-Serial.println(DisL);
-Serial.print("R:");
-Serial.println(DisR);
+// Serial.print("L:");
+// Serial.println(DisL);
+// Serial.print("R:");
+// Serial.println(DisR);
 Serial.print("D: ");
 Serial.println(turn);
 delay(20);
@@ -185,15 +181,14 @@ for (int i = 0; i<200;i++){
 float DisR = rightencoder();
 float DisL = leftencoder();
 char turn = angle();
-Serial.print("L:");
-Serial.println(DisL);
-Serial.print("R:");
-Serial.println(DisR);
+// Serial.print("L:");
+// Serial.println(DisL);
+// Serial.print("R:");
+// Serial.println(DisR);
 Serial.print("D: ");
 Serial.println(turn);
 delay(20);
 }
 
 }
-
 
