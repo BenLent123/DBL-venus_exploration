@@ -137,20 +137,27 @@ float rightencoderReset() {
 /////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
-char angle(float DisR, float DisL){
-  float angle;
-  char turn = 'n';
-  if (DisR > DisL){
-    angle = (DisR - DisL);
+char angle(){
+float tempR = 0;
+float tempL = 0;
+char turn = 'n';
+tempR = 0;
+tempL = 0;
+ 
+  if (tempR > tempL){
+    tempR = rightencoder();
+    tempL = leftencoder();
     turn = 'L';
   }
-  else if (DisL > DisR){
-    angle = (DisL - DisR);
+  else if (tempL > tempR){
+    tempR = rightencoder();
+    tempL = leftencoder();
     turn = 'R';
   }
-  else if (DisL == DisR){
-    angle = 0;
-   turn = 's';
+  else if (tempL == tempR){
+    tempR = rightencoder();
+    tempL = leftencoder();
+    turn = 's';
   }
   return(turn);
 }
@@ -163,7 +170,7 @@ spinL();
 for (int i = 0; i<200;i++){
 float DisR = rightencoder();
 float DisL = leftencoder();
-char turn = angle(DisR,DisL);
+char turn = angle();
 Serial.print("L:");
 Serial.println(DisL);
 Serial.print("R:");
@@ -177,7 +184,7 @@ spinR();
 for (int i = 0; i<200;i++){
 float DisR = rightencoder();
 float DisL = leftencoder();
-char turn = angle(DisR,DisL);
+char turn = angle();
 Serial.print("L:");
 Serial.println(DisL);
 Serial.print("R:");
