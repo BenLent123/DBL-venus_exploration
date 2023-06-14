@@ -1,0 +1,155 @@
+#include <Servo.h>
+
+Servo servoLeft;                             
+Servo servoRight;
+Servo servoUltrasound;
+Servo gripper;
+
+// For ultrasound module:
+// 0 degrees is right
+// 90 degrees is neutral
+// 180 degrees is left
+
+#define RXbee 0
+#define TX 1
+
+#define Sensor1 A1 // Sensor1 is assumed to be the tape detecting sensor, placed verically on the gripper (+/-)
+#define Sensor2 A0 // Sensor2 is assumed to be the rock detecting sensor, placed horizontally on the gripper facing 'forward'
+
+//2 through 6 not in use, digital, some pwm
+#define leftEncoderPin 7
+#define rightEncoderPin 8
+#define ultrasoundPin 9
+#define grabberServoPin 10
+#define ultrasoundServo 11
+#define leftServo 12
+#define rightServo 13
+
+int counterLoop = 0;
+int scanRes = 0;
+int tape = 0;
+int rock = 0;
+bool turnLeft = false;
+bool grabbingRock = false;
+
+int nholesR = 0;
+int nholesL = 0;
+bool prevreadL;
+bool prevreadR;
+
+void setup() 
+{
+  Serial.begin(9600);
+  servoRight.attach(rightServo);                   
+  servoLeft.attach(leftServo);
+  servoUltrasound.attach(ultrasoundServo); 
+  gripper.attach(grabberServoPin);
+  close_gripper();  
+  sensorsetup();
+}
+
+void sensorsetup()
+{
+  servoUltrasound.write(90);
+  delay(100);
+  return(1);
+}
+
+void loop() {
+  forward();
+
+  int result = rockSensor();
+
+  Serial.println(result);
+
+  if(result == 1){
+    Serial.println("Protocol initiated");
+    pickupRock();
+  }
+  
+}
+
+int rockSensor(){
+  int treshold = 250;
+
+  int result = analogRead(Sensor2);
+  
+
+  if(result < treshold){
+    return(1);
+  }
+
+  return(0);
+  // if white return 1
+  // else return 0
+}
+
+void pickupRock()
+{
+  stop();
+  open_gripper();
+  forward();
+  delay(750);
+  stop();
+  close_gripper();
+  int result = rockSensor();
+  if(result == 1){
+    pickupRock();
+  }  
+  forward();
+  return(0);
+}
+
+void open_gripper() 
+{
+  gripper.write(90);// set the servo position to 90 degrees 
+  delay(750); // wait for 0.75 sec
+}
+
+void close_gripper()
+{
+  gripper.write(180);
+  delay(750);
+}
+
+void forward()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.writeMicroseconds(1300);         
+  servoLeft.writeMicroseconds(1700);
+}    
+
+void backward()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.writeMicroseconds(1700);         
+  servoLeft.writeMicroseconds(1300);
+}   
+
+void spinL()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoLeft.writeMicroseconds(1700);         
+  servoRight.writeMicroseconds(1700);
+} 
+
+void spinR()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoLeft.writeMicroseconds(1300);         
+  servoRight.writeMicroseconds(1300);
+}  
+
+void stop()
+{
+  servoLeft.detach();
+  servoRight.detach();
+}  
