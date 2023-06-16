@@ -1,5 +1,5 @@
 // Input the sensor you want to calibrate
-#define Sensor1 A0 
+#define Sensor1 A1
 
 int IR_sensor1 = 0;
 
@@ -8,43 +8,62 @@ void setup() {
 }
 
 void loop() {
-  
-  IR_sensor1 = infra_ping(Sensor1);
+  int ping = 0;
+  if(Sensor1 == A1){
+    ping = tapeSensor();
 
-  if(IR_sensor1 == -1)
-  {
-    Serial.println("IR detected white");     
-  }else if (IR_sensor1 == 1) 
-  {
-    Serial.println("IR detected black");
-  }else
-  {
-    Serial.println("IR function returned 0");
+    if(ping == -1){
+      Serial.println("Tape succesfully detected");
+    }else{
+      Serial.println("No tape detected");
+    }
+
+
+  }else if(Sensor1 == A0){
+    ping = rockSensor();
+
+    if(ping == 1){
+      Serial.println("rock/white wall succesfully detected");
+    }else{
+      Serial.println("Nothing detected");
+    }
+
+
   }
+
+  delay(500);
+  Serial.println();
 }
 
-int infra_ping(int pin){
+
+int tapeSensor(){
+  int tape_threshold = 450;
+
+  int result = analogRead(A1);
+  Serial.println("Result of tape sensor: ");
+  Serial.println(result);
   
-  int infra_result = -1;
-  infra_result = analogRead(pin);
-  
-  Serial.println(infra_result);
-
-  // finetune following values and copy to your main code per 
-  // below is white detected (probably a rock)
-  int lower_threshold = 550;
-  // above is black detected (probably tape)
-  int upper_thereshold = 700;
-
-  if(infra_result <= lower_threshold){
-
-    return(-1);
-
-  }else if(infra_result >= upper_thereshold){
-    
-    return(1);
-
+  if (result < tape_threshold)
+  {
+    return(0);
+    // nothing/white detected
   }
-  return(0);
+  //black detected
+  return(-1);
+}
 
+int rockSensor(){
+  int rock_threshold = 250;
+
+  int result = analogRead(A0);
+  Serial.println("Result of rock sensor: ");
+  Serial.println(result);
+
+  if(result < rock_threshold){
+    return(1);
+  }
+
+  return(0);
+  // if white return 1
+  // else return 0
 }
