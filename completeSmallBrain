@@ -1,0 +1,629 @@
+#include <Servo.h>
+
+Servo servoLeft;                             
+Servo servoRight;
+Servo servoUltrasound;
+Servo gripper;
+
+// For ultrasound module:
+// 0 degrees is right
+// 90 degrees is neutral
+// 180 degrees is left
+
+#define RXbee 0
+#define TX 1
+#define Sensor1 A1 // Sensor1 is assumed to be the tape detecting sensor, placed verically on the gripper (+/-)
+#define Sensor2 A0 // Sensor2 is assumed to be the rock detecting sensor, placed horizontally on the gripper facing 'forward'
+//2 through 6 not in use, digital, some pwm
+#define leftEncoderPin 7
+#define rightEncoderPin 8
+#define ultrasoundPin 9
+#define grabberServoPin 10
+#define ultrasoundServo 11
+#define leftServo 12
+#define rightServo 13
+
+int counterLoop = 0;
+int scanRes = 0;
+int tape = 0;
+int rock = 0;
+bool turnLeft = true;
+bool grabbingRock = false;
+
+int nholesR = 0;
+int nholesL = 0;
+bool prevreadL;
+bool prevreadR;
+
+int avoidThreshold = 15;
+
+void setup() 
+{
+  Serial.begin(9600);
+  servoRight.attach(rightServo);                   
+  servoLeft.attach(leftServo);
+  servoUltrasound.attach(ultrasoundServo); 
+  gripper.attach(grabberServoPin);
+  close_gripper();  
+  sensorsetup();
+}
+
+void sensorsetup()
+{
+  servoUltrasound.write(90);
+  delay(100);
+  return(1);
+}
+
+void loop() 
+{
+  int USDistance = 0;
+
+  tape = 0;
+  rock = 0;
+  counterLoop++;
+
+  int d = leftencoder();
+  // trying to randomise movement
+  if (d>=60)
+  {
+    Serial.println("randomizer movement");
+    resetEncoders();
+    spinL();
+    delay(900);
+    forward();
+    delay(500);
+    spinL();
+    delay(900);
+  }
+
+  // periodicscan:
+  // periodicscan threshold should be finetuned after all the modules are included in the code to find a right balance
+  if (counterLoop > 5)
+  {
+    scanRes = periodicScan();
+    counterLoop = 0;
+    servoUltrasound.write(90);
+    if (scanRes == 0) 
+    {
+      // means something detected at 0 (right?)
+      backward();
+      delay(50);
+      spinL();
+      delay(200);
+    }
+    if (scanRes == 180)
+    {
+      backward();
+      delay(50);
+      spinR();
+      delay(200);
+    }
+  }
+  
+  servoUltrasound.write(50); 
+  for(int i = 50;i<130;i=i+8)
+  {
+    servoUltrasound.write(i);
+    USDistance = ping();
+    
+    
+    tape = tapeSensor();
+    // returning 0 -> no action required
+    // returning -1 -> tape detected
+    rock = rockSensor();
+    // returning 0 -> no action required
+    // returning 1 -> white detected
+
+    if((USDistance < avoidThreshold ) && (USDistance != 0) )
+    {
+      // Ultrasound has detected something
+
+      if(rock == 1)
+      {
+        // navigate lab + drop etc if it is currently grabbin a rock
+
+        // rock/front sensor detected white
+        for( int i = 0; i<5; i++)
+        {
+          Serial.println("Home base detected");
+        }
+
+
+        stop();
+        Serial.println("stopping");
+        delay(5000);
+
+
+        // home base detected
+        // protocol to navigate to drive up ramp
+        if(grabbingRock == false)
+        {
+          backward();
+          delay(2000);
+
+          left();
+          
+          forward();          
+          avoidObstacle();
+
+        }else
+        {
+          
+          for( int i = 0; i<5; i++)
+          {
+            Serial.print("deposit rock initiaded");
+          }
+
+          // depositRock();
+
+          depositRock_version_two();
+
+
+          grabbingRock = false;
+
+          forward();
+
+        }
+      }
+      else if (tape == -1) 
+      {
+        avoidHole();
+      }
+      else
+      {
+        // neither sensor detected anything        
+        Serial.println("Nothing detected, both IR and US");
+        // avoid obstacle
+        avoidObstacle();
+      }
+
+    }
+    else
+    {
+      // nothing detected by Ultrasound sensor.
+
+      if(rock == 1)
+      {
+        // rock sensor detected white
+        Serial.println("Rock detected, nothing US detected");
+        // initiate rock grabbing protocol
+
+        if(grabbingRock == true)
+        {
+          avoidObstacle();
+        }else
+        {
+          for( int i = 0; i<5; i++)
+          {
+            Serial.println("pick up rock protocol initiated");
+          }
+          pickupRock();
+          grabbingRock = true;
+        }
+         
+      }
+      else if (tape == -1)
+      {
+        // tape sensor detected black
+        for( int i = 0; i<5; i++)
+        {
+          Serial.println("avoidhole protocol begin");
+        }
+        // avoid hole
+        avoidHole();
+
+      }
+      else
+      {        
+        Serial.println("Nothing ultrasound detected, neither IR sensor detected something meaningful");
+        forward();
+      }
+    }
+  }
+  Serial.print('Status grabber: ');
+  for( int i = 0; i<5; i++)
+  {
+    Serial.println(grabbingRock);
+  }
+}
+
+void depositRock_version_two()
+{
+  left();
+  
+  forward();
+
+  turnLeft = true;
+
+  int distance = ping();
+  int tape = tapeSensor();
+
+  while(tape == 0)
+  {
+    if (distance < 10 && distance != 0){
+      avoidObstacle();
+    }
+    tape = tapeSensor();
+    distance = ping();
+  }
+
+  open_gripper();
+  leaveLab_version_two();
+  close_gripper();
+  
+}
+
+void depositRock()
+{
+  turnLeft = true;
+  int USPING = ping();
+
+  while (USPING < avoidThreshold && USPING != 0){
+    avoidObstacle();
+    USPING = ping();
+  }
+
+  forward();
+  tape = tapeSensor();
+  bool check = true;
+
+  while(true){
+    tape = tapeSensor();
+    USPING = ping();
+
+    if (tape == -1){
+      servoUltrasound.write(180);
+      delay(200);
+      USPING = ping();
+
+      if(USPING < avoidThreshold && USPING != 0){
+        // IN THE LAB
+        open_gripper();
+
+        close_gripper();
+        leaveLab();
+        return(0);      
+      }else{
+        
+        navigateLabOpening();        
+
+      }
+    }    
+  }
+}
+
+void leaveLab_version_two()
+{
+  backward();
+  delay(5000);
+
+  left();
+
+  forward();  
+}
+
+void leaveLab()
+{
+  servoUltrasound.write(180);
+  delay(400);
+
+  backward();
+  int usping = ping();
+
+  while(usping<avoidThreshold && usping != 0)
+  {
+    usping = ping();
+  }
+  delay(200);
+  left();
+}
+
+void navigateLabOpening()
+{
+  servoUltrasound.write(0);
+  delay(400);
+
+  int lastPing = ping();
+  int currPing = ping();  
+  backward();
+
+  while(currPing < (lastPing + 15)){
+    lastPing = currPing;
+    currPing = ping();
+    
+    if(currPing > avoidThreshold )
+    {
+      // move a bit towards wall
+      forward();
+      delay(75);
+      spinR();
+      delay(100);
+      backward();
+    }
+  }
+  delay(50);
+  right();
+  servoUltrasound.write(90);
+  delay(200);
+
+  // finetune delay for appropriate
+
+  currPing = ping();
+  forward();
+  while(currPing <avoidThreshold && currPing != 0)
+  {
+    currPing = ping();
+  }
+
+  while (currPing < avoidThreshold && currPing != 0)
+  {
+    avoidObstacle();
+    currPing = ping();
+  }
+
+  forward();
+}
+
+void pickupRock()
+{
+  stop();
+  open_gripper();
+  forward();
+  delay(750);
+  stop();
+  close_gripper();
+  int result = rockSensor();
+  if(result == 1)
+  {
+    pickupRock();
+  }  
+  forward();
+  return(0);
+}
+
+void avoidHole()
+{
+  backward();
+  delay(1000);
+  spinR();
+  delay(500);
+  forward();
+}
+
+int tapeSensor(){
+  int tape_threshold = 450;
+
+  int result = analogRead(A1);
+  Serial.println("Result of tape sensor: ");
+  Serial.println(result);
+  
+  if (result < tape_threshold)
+  {
+    return(0);
+    // nothing/white detected
+  }
+  //black detected
+  return(-1);
+}
+
+int rockSensor(){
+  int rock_threshold = 150;
+
+  int result = analogRead(A0);
+  Serial.println("Result of rock sensor: ");
+  Serial.println(result);
+
+  if(result < rock_threshold){
+    return(1);
+  }
+
+  return(0);
+  // if white return 1
+  // else return 0
+}
+
+void avoidObstacle()
+{
+  backward();
+  servoUltrasound.write(90);
+  delay(50);
+
+  if(turnLeft==false){
+    spinR();
+  }else{
+    spinL();
+  }
+  delay(150);
+}
+
+int ping()
+{
+  int duration, USDistance;
+  pinMode(ultrasoundPin, OUTPUT);
+  digitalWrite(ultrasoundPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(ultrasoundPin, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(ultrasoundPin, LOW);
+  pinMode(ultrasoundPin, INPUT);
+  duration = pulseIn(ultrasoundPin, HIGH);
+  USDistance = duration / 29 / 2;
+  // printDistance(USDistance);
+  return(USDistance);
+}
+
+void printDistance(int USDistance)
+{
+  Serial.print(USDistance);
+  Serial.print("cm");
+  Serial.println();
+}
+
+void right()
+{
+  servoLeft.attach(leftServo);
+  servoLeft.writeMicroseconds(1700);
+
+  int storevar = nholesL;
+  nholesL = 0;
+
+  // while(nholesL <16)
+  while(nholesL < 6)
+  {
+    leftencoder();
+    Serial.println(nholesL);
+  }
+
+  nholesL = storevar;
+  servoLeft.detach();
+}
+
+void left()
+{
+  servoRight.attach(rightServo);
+  servoRight.writeMicroseconds(1300);
+  int storevar = nholesR;
+  nholesR = 0;
+  while(nholesR < 6)                  // ( distance between wheels (radius of turn circle) / 2 (cus 1/4 of circle turn) ) * pi
+  {
+    rightencoder();
+    Serial.println(nholesR);
+  }
+  delay(1000);  
+  nholesR = storevar;
+  servoRight.detach();
+}
+
+void forward()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.writeMicroseconds(1300);         
+  servoLeft.writeMicroseconds(1700);
+}    
+
+void backward()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoRight.writeMicroseconds(1700);         
+  servoLeft.writeMicroseconds(1300);
+}   
+
+void spinL()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoLeft.writeMicroseconds(1700);         
+  servoRight.writeMicroseconds(1700);
+} 
+
+void spinR()
+{
+  stop();
+  servoLeft.attach(leftServo);                   
+  servoRight.attach(rightServo);
+  servoLeft.writeMicroseconds(1300);         
+  servoRight.writeMicroseconds(1300);
+}  
+
+void stop()
+{
+  servoLeft.detach();
+  servoRight.detach();
+}  
+
+int periodicScan() 
+{
+  int USDistance;
+  bool left = false;
+  bool right = false;
+  stop();
+
+  // bool save_state = turnLeft;
+
+  servoUltrasound.write(0);
+  delay(750);
+  USDistance = ping();
+  if(USDistance < avoidThreshold && USDistance != 0){
+    right = true;
+  }
+  if(USDistance < 40 && USDistance != 0){
+    turnLeft = true;
+  }
+
+  servoUltrasound.write(180);
+  delay(1000);
+  USDistance = ping();
+  if(USDistance < avoidThreshold && USDistance != 0){
+    left = true;
+  }
+  if(USDistance < 40 && USDistance != 0){
+    // turnLeft = false;
+  }
+
+  if(right==true && left == true){
+    // obstacles on both sides
+    return(90);
+  }else if(right==true && left == false){
+    // obstactle at direction 180 (left?)
+    return(180);
+  }else if(right==false && left == true){
+    // obstacle at direction 0 (right?)
+    return(0);
+  }
+  return(-1);
+}
+
+void open_gripper() 
+{
+  gripper.write(90);// set the servo position to 90 degrees 
+  delay(750); // wait for 0.75 sec
+}
+
+void close_gripper()
+{
+  gripper.write(180);
+  delay(750);
+}
+
+void resetEncoders()
+{
+  nholesR = 0;
+  nholesL = 0;
+}
+
+float leftencoder() 
+{
+  boolean readwheel = digitalRead(leftEncoderPin);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadL) {                   //make sure that it is not the same hole being read
+    nholesL += 1;
+    prevreadL = 1;
+  } else if (readwheel == 0) {
+    prevreadL = 0;
+  }
+  // Robot with 8 holes in wheels
+  float distance = (((nholesL)*3.14*6.5)/8);
+
+  // Robot with x holes in wheels
+  // float distance = (((nholesL)*3.14*6.5)/8);
+  return(distance);  
+}
+
+float rightencoder() 
+{
+  boolean readwheel = digitalRead(rightEncoderPin);                  //read encoders
+  if (readwheel == 1 && readwheel != prevreadR) {             //make sure that it is not the same hole being read
+    nholesR += 1;
+    prevreadR = 1;
+  } else if (readwheel == 0) {
+    prevreadR = 0;
+  }
+  
+  float distance = (((nholesR)*3.14*6.5)/8);
+  return(distance);
+}
