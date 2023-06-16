@@ -35,7 +35,7 @@ int nholesL = 0;
 bool prevreadL;
 bool prevreadR;
 
-int avoidThreshold = 15;
+int avoidThreshold = 16;
 
 void setup() 
 {
@@ -96,13 +96,13 @@ void loop()
     {
       backward();
       delay(50);
-      spinR();
+      spinL();
       delay(200);
     }
   }
   
   servoUltrasound.write(50); 
-  for(int i = 50;i<130;i=i+8)
+  for(int i = 60;i<120;i=i+5)
   {
     servoUltrasound.write(i);
     USDistance = ping();
@@ -121,34 +121,9 @@ void loop()
 
       if(rock == 1)
       {
-        // navigate lab + drop etc if it is currently grabbin a rock
 
-        // rock/front sensor detected white
-        for( int i = 0; i<5; i++)
-        {
-          Serial.println("Home base detected");
-        }
-
-
-        stop();
-        Serial.println("stopping");
-        delay(5000);
-
-
-        // home base detected
-        // protocol to navigate to drive up ramp
-        if(grabbingRock == false)
-        {
-          backward();
-          delay(2000);
-
-          left();
-          
-          forward();          
-          avoidObstacle();
-
-        }else
-        {
+        
+        
           
           for( int i = 0; i<5; i++)
           {
@@ -164,7 +139,7 @@ void loop()
 
           forward();
 
-        }
+        
       }
       else if (tape == -1) 
       {
@@ -191,7 +166,11 @@ void loop()
 
         if(grabbingRock == true)
         {
-          avoidObstacle();
+
+          depositRock_version_two();
+          grabbingRock = false;
+          forward();
+          
         }else
         {
           for( int i = 0; i<5; i++)
@@ -230,14 +209,29 @@ void loop()
 
 void depositRock_version_two()
 {
+  int distance = ping();
+  int tape = tapeSensor();
+  
+  servoUltrasound.write(90);
+
+
+  backward();
+  delay(50);
   left();
+  forward();
+  delay(750);
+  
+  // spinL();
+  // while(distance < 15 && distance != 0){
+  //   distance = ping();
+  // }
+
+  // spinl until ping is bigger then threshold
+  
   
   forward();
 
   turnLeft = true;
-
-  int distance = ping();
-  int tape = tapeSensor();
 
   while(tape == 0)
   {
@@ -337,7 +331,7 @@ void navigateLabOpening()
       // move a bit towards wall
       forward();
       delay(75);
-      spinR();
+      spinL();
       delay(100);
       backward();
     }
@@ -386,7 +380,7 @@ void avoidHole()
 {
   backward();
   delay(1000);
-  spinR();
+  spinL();
   delay(500);
   forward();
 }
@@ -485,7 +479,7 @@ void left()
   servoRight.writeMicroseconds(1300);
   int storevar = nholesR;
   nholesR = 0;
-  while(nholesR < 6)                  // ( distance between wheels (radius of turn circle) / 2 (cus 1/4 of circle turn) ) * pi
+  while(nholesR < 2)                  // ( distance between wheels (radius of turn circle) / 2 (cus 1/4 of circle turn) ) * pi
   {
     rightencoder();
     Serial.println(nholesR);
@@ -518,8 +512,8 @@ void spinL()
   stop();
   servoLeft.attach(leftServo);                   
   servoRight.attach(rightServo);
-  servoLeft.writeMicroseconds(1700);         
-  servoRight.writeMicroseconds(1700);
+  servoLeft.writeMicroseconds(1300);         
+  servoRight.writeMicroseconds(1300);
 } 
 
 void spinR()
